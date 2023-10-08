@@ -104,6 +104,67 @@ sudo netstat -ltunp
 # 6 - Adaptive load balancing, it tries to load balance both outgoing and incoming traffice
 # In the contexts of bonds, all interfaces used are called ports
 
+# In Ubuntu let's explore the example to see how to configure bridge and bonding using netplan
+ls /usr/share/doc/netplan/examples 
+bridge.yaml and bonding.yaml
+cat /usr/share/doc/netplan/examples/bridge.yaml
+sudo cp /usr/share/doc/netplan/examples/bridge.yaml /etc/netplan/99-bridge.yaml
+
+ip -c link
+enp2s0
+enp3s0
+
+sudo vi /etc/netplan/99-bridge.yaml
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp2s0:
+      dhcp4: no
+    enp3s0:
+      dhcp4: no
+  bridges:
+    br0:
+      dhcp4: yes
+      interfaces:
+        - enp2s0
+        - enp3s0
+
+sudo netplan try
+# Hit ENTER
+
+# Bond configuration
+sudo rm /etc/netplan/99-bridge.yaml
+sudo ip link delete br0
+sudo shutdown -R
+sudo cp /usr/share/doc/netplan/examples/bonding.yaml /etc/netplan/99-bonding.yaml
+sudo vi /etc/netplan/99-bonding.yaml
+network:
+  version: 2
+  renderer: networkd
+  ethernets: # Added this section
+    enp2s0:
+      dhcp4: no
+    enp3s0:
+      dhcp4: no
+  bonds:
+    bond0:
+      dhcp4: yes
+      interfaces:
+        - enp2s0
+        - enp3s0
+      parameters:
+        mode: active-backup
+        primary: enp2s0
+sudo netplan try
+sudo netplan apply
+ip -c addr
+cat /proc/net/bonding/bond0
+
+man netplan
+# /bonding # Third search result for the mode types under parameters
+
+
 # Configure Firewallls and Packet Filtering
 # Application Firewall is one
 # In ubuntu we have network firewalls
